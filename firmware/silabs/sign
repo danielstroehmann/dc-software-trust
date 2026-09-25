@@ -1,0 +1,38 @@
+#!/bin/bash
+if [ -n "${1:-}" ]; then
+    KP_ALIAS="$1"
+else
+    smctl kp ls
+    echo
+    read -p "Keypair Alias: " KP_ALIAS
+fi
+KP_ID=$(smctl kp ls -f "alias=$KP_ALIAS" | grep -o '[0-9a-fA-F]\{8\}-[0-9a-fA-F]\{4\}-4[0-9a-fA-F]\{3\}-[89abAB][0-9a-fA-F]\{3\}-[0-9a-fA-F]\{12\}' | head -n 1)
+
+echo "Keypair.....: ${KP_ALIAS}"
+echo "Keypair ID..: ${KP_ID}"
+
+src/tools/commander-cli convert firmware.s37 --secureboot --extsign --outfile firmware
+
+############################################################
+smctl sign sign-hash \
+    --file firmware.extsign \
+    --hash-algorithm SHA-256 \
+    --signature-algorithm SHA256WithECDSA \
+    --signature-file firmware.sign \
+    --binary \
+    ${KP_ID}
+
+smctl sign verify-hash \
+    --file firmware.extsign \
+    --hash-algorithm SHA-256 \
+    --signature-algorithm SHA256WithECDSA \
+    --signature-file firmware.sign \
+    ${KP_ID}
+############################################################
+
+
+smctl certificate download --keypair-alias ${KP_ALIAS} -n ${KP_ALIAS}.crt --format pem
+openssl x509 -inform pem -in ${KP_ALIAS}.crt -pubkey -outform pem -noout > ${KP_ALIAS}.pub
+src/tools/commander-cli convert "firmware.s37" --secureboot --signature "firmware.sign" --verify ${KP_ALIAS}.pub --outfile "firmware.signed.s37"
+
+rm firmware.sign firmware.extsign ${KP_ALIAS}.crt ${KP_ALIAS}.pub

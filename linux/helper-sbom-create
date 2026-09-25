@@ -1,0 +1,17 @@
+#!/bin/bash
+cat > ./src/sbom.json <<'EOF'
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-02-22T10:00:00Z",
+    "component": {
+      "type": "firmware",
+      "name": "FW-DC1",
+      "version": "1.0.0"
+    }
+  },
+  "components": []
+}
+EOF

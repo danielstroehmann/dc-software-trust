@@ -1,0 +1,92 @@
+# Created by https://www.toptal.com/developers/gitignore/api/windows,macos
+# Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos
+
+### macOS ###
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+### macOS Patch ###
+# iCloud generated files
+*.icloud
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.exe
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.toptal.com/developers/gitignore/api/windows,macos
+
+# Custom
+secrets.sh
+*.p12
+/src/
+*.jar
+
+# Software Signing
+.sig
+# Third-party tools, download separately (see firmware/silabs/README.md, firmware/rauc/README.md)
+firmware/silabs/src/tools/
+firmware/rauc/openssl-exsample/smpkcs11.so
+
+# Local PKI certificates (see pki/README.md)
+pki/ica/Solworx ECDSA Root E1 ICA I1_2026-03-26.pem
+pki/ica/Solworx MLDSA Root M1 ICA I1_2026-03-26.pem
+pki/ica/Solworx RSA Root R1 ICA I1_2026-03-26.pem
+pki/ica/Stroehmi ECDSA ICA_2026-03-26.pem
+pki/ica/Stroehmi ICA DC_2026-03-26.pem
+pki/root/Solworx ECDSA Root E1_2026-03-26.pem
+pki/root/Solworx MLDSA Root M1_2026-03-26.pem
+pki/root/Solworx RSA Root R1_2026-03-26.pem
+pki/root/Stroehmi-DC1-ROOT-CA_2026-03-26.pem
+
+# Generated RAUC artifacts
+firmware/rauc/src/*.crt
+firmware/rauc/src/keyring.pem
+firmware/rauc/src/*.raucb

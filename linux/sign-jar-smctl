@@ -1,0 +1,11 @@
+#!/bin/bash
+smctl kp ls ; echo ; read -p "Keypair Alias: " KP_ALIAS
+SIGNING_DIR="${SIGNING_DIR:-$HOME/signing}"
+####################################################################################
+./helper-jar-helloworld
+cp ./src/hello.jar ./src/SIGNED_hello.jar
+####################################################################################
+smctl sign --keypair-alias $KP_ALIAS --input ./src/SIGNED_hello.jar --verbose --config-file "$SIGNING_DIR/pkcs11properties.cfg"
+####################################################################################
+cd src ; unzip SIGNED_hello.jar ; cat META-INF/*.SF ; find . -not -name "*.jar" -not -path "." -delete ; cd ..
+

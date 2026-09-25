@@ -1,0 +1,10 @@
+{
+  "payloadType": "application/vnd.in-toto+json",
+  "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZVR5cGUiOiJodHRwczovL2N5Y2xvbmVkeC5vcmcvYm9tIiwic3ViamVjdCI6W3sibmFtZSI6InNib20uanNvbiIsImRpZ2VzdCI6eyJzaGEyNTYiOiIifX1dLCJwcmVkaWNhdGUiOnsiYm9tRm9ybWF0IjoiQ3ljbG9uZURYIiwiY29tcG9uZW50cyI6W10sIm1ldGFkYXRhIjp7ImNvbXBvbmVudCI6eyJuYW1lIjoiRlctREMxIiwidHlwZSI6ImZpcm13YXJlIiwidmVyc2lvbiI6IjEuMC4wIn0sInRpbWVzdGFtcCI6IjIwMjYtMDItMjJUMTA6MDA6MDBaIn0sInNwZWNWZXJzaW9uIjoiMS40IiwidmVyc2lvbiI6MX19",
+  "signatures": [
+    {
+      "keyid": "",
+      "sig": "MwWWfVKWHx41+KgPwyJ15eBhHYX9fRRXtzjYPmq/Xe5i72b1rsnxtMHTHWwfp6hkStIVYmw/PU6cj6N6kHB5UwY5guwLIHYtwpysZoQeWzWLbOTvuoZvWVBJJv08NhOhkX4yBrVYByc61nXQMJrecVp5y2dAEYUbu4M6HM57vlZvAip9rh7ryTM4Hu2ItIhOQg4x6Jv2p2KKr2uF/tbyUmRyfyYMZow6HElGAhuumu1Jb9eOfJl/V3T8/ZoCuACfDcmeXsqHQl0BV6GsNYOHgxwqlGPBRw3RbwU9jHRijvVGQuKcqjbnzEeCcBOWTt+6TEqRz9UqwZ//MYeyBNTbkrB0wbETxFuj4Y1OWeBsd3tRBjNLggRyTmv0JOWC13Y0gDQJCceJzQgLQzFKXzwBobmXUYxFJTCNztjti2/6Ykg5S/F/HLGqbxdeTUwyWp+/G68RQu/4JRTVvDMkrMjaFBHoCQ8hPRBi7BLo+zg8UfMoPqZAzM13T7dxlWs+ebB/"
+    }
+  ]
+}

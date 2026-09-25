@@ -1,0 +1,6 @@
+Metadata-Version: 2.4
+Name: smctl-spsdk-plugin
+Version: 0.1.0
+Summary: SPSDK Signature Provider Plugin für DigiCert smctl
+Requires-Python: >=3.9
+Requires-Dist: spsdk

@@ -1,0 +1,9 @@
+#!/bin/bash
+source ../pki/select-chain
+select_pki_chain || exit 1
+
+for pem in "$ROOT_PEM" "$ICA_PEM"; do
+    alias=$(basename "$pem" .pem)
+    sudo keytool -noprompt -import -trustcacerts -alias "${alias// /_}" -file "$pem" \
+        -keystore "$JAVA_HOME/lib/security/cacerts" -storepass changeit >/dev/null 2>&1
+done

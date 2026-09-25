@@ -1,0 +1,9 @@
+#!/bin/bash
+smctl kp ls ; echo ; read -p "Keypair UUID: " KP_ID
+#################################################################
+mkdir -p src
+bash helper-sbom-create
+#################################################################
+smctl sign in-toto cyclonedx ./src/sbom.json $KP_ID
+#################################################################
+echo ; cat ./src/sbom.json

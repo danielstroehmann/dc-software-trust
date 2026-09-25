@@ -1,0 +1,11 @@
+[update]
+compatible=test-device
+version=1.0
+
+[bundle]
+format=plain
+
+[image.rootfs]
+sha256=dae9bb3c36d9740225f197e361c56e9b6f783347ddf2fddc9d8abe0805b543f7
+size=13
+filename=rootfs.img

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Source this file, then call select_pki_chain to pick a Root CA and an
+# Intermediate CA from pki/root and pki/ica. Sets ROOT_PEM and ICA_PEM to absolute paths.
+
+PKI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+select_pem() {
+    local dir="$1" choice
+    local files=("$dir"/*.pem)
+    [[ -e "${files[0]}" ]] || { echo "No certificates in $dir" >&2; return 1; }
+    PS3="$2: "
+    select choice in "${files[@]##*/}"; do
+        [[ -n "$choice" ]] && { echo "$dir/$choice"; return 0; }
+    done
+    return 1
+}
+
+select_pki_chain() {
+    echo "Root CA:" >&2
+    ROOT_PEM=$(select_pem "$PKI_DIR/root" "Root CA") || return 1
+    echo "Intermediate CA:" >&2
+    ICA_PEM=$(select_pem "$PKI_DIR/ica" "Intermediate CA") || return 1
+}

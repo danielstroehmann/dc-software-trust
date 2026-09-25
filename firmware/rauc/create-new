@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -n "${1:-}" ]; then
+    KP_ALIAS="$1"
+else
+    smctl kp ls
+    echo
+    read -p "Keypair Alias: " KP_ALIAS
+fi
+
+source "$(dirname "${BASH_SOURCE[0]}")/../../pki/select-chain"
+select_pki_chain
+### START: RAUC MAGIC
+WORKDIR="src"
+CONTENT="$WORKDIR/content"
+SEED="$WORKDIR/seed.raucb"
+printf "HELLO WORLD!\n" > "$CONTENT/rootfs.img"
+cat > "$CONTENT/manifest.raucm" <<'EOF'
+[update]
+compatible=test-device
+version=1.0
+
+[bundle]
+format=plain
+
+[image.rootfs]
+filename=rootfs.img
+EOF
+### END: RAUC MAGIC
+
+# create keyring to validate the trust chain. needs
+# to include Intermediate (Signing CA) followed by
+# Root CA. Both in PEM format.
+cat "$ICA_PEM" "$ROOT_PEM" > src/keyring.pem
+smctl certificate download --keypair-alias ${KP_ALIAS} -n src/${KP_ALIAS}.crt
+# REMOVE PREVIOUS BUNDLE
+[ -f $SEED ] && rm $SEED
+# SIGN BUNDLE
+rauc bundle -c src/rauc.conf "$CONTENT" "$SEED" \
+  --cert src/${KP_ALIAS}.crt \
+  --key "pkcs11:object=${KP_ALIAS};type=private"
+
+rauc info -c src/rauc.conf --keyring src/keyring.pem "$SEED"

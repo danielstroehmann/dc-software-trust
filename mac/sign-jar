@@ -1,0 +1,65 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$SCRIPT_DIR/src"
+JAR_FILE="$SRC_DIR/hello.jar"
+
+mkdir -p "$SRC_DIR" && cd "$SRC_DIR"
+rm -f Hello.java Hello.class "$JAR_FILE" && rm -rf META-INF
+
+cat > Hello.java <<'EOF'
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+EOF
+
+javac Hello.java
+jar --create --file "$JAR_FILE" --main-class Hello Hello.class >/dev/null
+java -jar "$JAR_FILE"
+rm -f Hello.java Hello.class
+cd "$SCRIPT_DIR"
+
+SRC_JAR="hello.jar"
+if [ -n "${1:-}" ]; then
+    KEYPAIR_ALIAS="$1"
+else
+    smctl kp ls
+    echo
+    read -p "Keypair Alias: " KEYPAIR_ALIAS
+fi
+
+source ../pki/select-chain
+select_pki_chain || exit 1
+
+smctl certificate download \
+    --keypair-alias=$KEYPAIR_ALIAS \
+    --issuer-first --chain \
+    -n ${KEYPAIR_ALIAS}.crt >/dev/null 2>&1
+
+for pem in "$ROOT_PEM" "$ICA_PEM"; do
+    alias=$(basename "$pem" .pem)
+    sudo keytool -noprompt -import -trustcacerts -alias "${alias// /_}" \
+        -file "$pem" \
+        -keystore "$JAVA_HOME/lib/security/cacerts" \
+        -storepass changeit >/dev/null 2>&1
+done
+
+JCE_DIR="$HOME/.digicert-ucpc/applications/smjce/1.0"
+
+jarsigner -verbose \
+    -J-Djava.class.path="$JCE_DIR/digicert-jce-1.0.jar:$JCE_DIR/bcprov-jdk18on-1.77.jar" \
+    -keystore NONE \
+    -storetype DIGICERT \
+    -storepass changeit \
+    -providerClass com.digicert.jce.Provider \
+    -certchain ${KEYPAIR_ALIAS}.crt \
+    -sigalg SHA256withRSA \
+    -tsa http://timestamp.digicert.com \
+    -signedjar ./src/SIGNED_$SRC_JAR \
+    ./src/$SRC_JAR \
+    $KEYPAIR_ALIAS
+
+cd src ; unzip SIGNED_hello.jar ; cat META-INF/*.SF ; find . -not -name "*.jar" -not -path "." -delete ; cd ..
+
+rm *.crt

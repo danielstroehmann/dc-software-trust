@@ -1,0 +1,10 @@
+#!/bin/bash
+smctl kp ls ; echo ; read -p "Keypair Alias: " KP_ALIAS
+SIGNING_DIR="${SIGNING_DIR:-$HOME/signing}"
+##################################################################
+mkdir -p ./src
+echo 'console.log("Hello, World!");' > ./src/hello.js
+##################################################################
+smctl sign --keypair-alias $KP_ALIAS --input ./src/hello.js --verbose --config-file "$SIGNING_DIR/pkcs11properties.cfg"
+##################################################################
+cat ./src/hello.js

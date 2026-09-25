@@ -1,0 +1,4 @@
+#!/bin/bash
+smctl kp ls
+echo ; read -p "Key Pair ID......: " KP_ID
+python3 test_plugin_direct.py   --keypair-id $KP_ID --sig-alg MLDSA65 --hash-alg SHA-256

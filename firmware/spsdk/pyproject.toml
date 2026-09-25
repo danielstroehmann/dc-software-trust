@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smctl-spsdk-plugin"
+version = "0.1.0"
+description = "SPSDK Signature Provider plugin for DigiCert smctl"
+requires-python = ">=3.9"
+dependencies = ["spsdk"]
+
+[project.entry-points."spsdk.sp"]
+smctl = "smctl_signature_provider:SmctlSignatureProvider"
+
+[tool.setuptools]
+py-modules = ["smctl_signature_provider"]

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Sign a file using ML-DSA hash signing via smctl (DigiCert Software Trust Manager).
+# Fully interactive: all options are selected via prompts.
+
+set -euo pipefail
+
+die() { echo "error: $*" >&2; exit 1; }
+
+command -v smctl   &>/dev/null || die "smctl not found"
+command -v openssl &>/dev/null || die "openssl not found"
+
+# --- select file to sign ---
+read -rp "File to sign: " TARGET_FILE
+[[ -n "$TARGET_FILE" ]] || die "no file specified"
+[[ -f "$TARGET_FILE" ]]  || die "file not found: $TARGET_FILE"
+
+# --- list keypairs and select one ---
+echo ""
+echo "=== Available keypairs ==="
+smctl keypair list || die "smctl keypair list failed"
+echo ""
+read -rp "Keypair ID: " KEYPAIR_ID
+[[ -n "$KEYPAIR_ID" ]] || die "no keypair ID provided"
+
+# --- select signature algorithm ---
+echo ""
+echo "Signature algorithm:"
+echo "  1) MLDSA44"
+echo "  2) MLDSA65  (default)"
+echo "  3) MLDSA87"
+read -rp "Choice [1-3]: " SIG_CHOICE
+case "$SIG_CHOICE" in
+  1) SIG_ALG="MLDSA44" ;;
+  3) SIG_ALG="MLDSA87" ;;
+  *) SIG_ALG="MLDSA65" ;;
+esac
+
+# --- select hash algorithm ---
+echo ""
+echo "Hash algorithm:"
+echo "  1) SHA-256"
+echo "  2) SHA-384"
+echo "  3) SHA-512  (default)"
+echo "  4) SHA3-256"
+echo "  5) SHA3-512"
+read -rp "Choice [1-5]: " HASH_CHOICE
+case "$HASH_CHOICE" in
+  1) HASH_ALG="SHA-256";  OPENSSL_ALG="sha256"   ;;
+  2) HASH_ALG="SHA-384";  OPENSSL_ALG="sha384"   ;;
+  4) HASH_ALG="SHA3-256"; OPENSSL_ALG="sha3-256" ;;
+  5) HASH_ALG="SHA3-512"; OPENSSL_ALG="sha3-512" ;;
+  *) HASH_ALG="SHA-512";  OPENSSL_ALG="sha512"   ;;
+esac
+
+# --- select output format ---
+echo ""
+echo "Signature output format:"
+echo "  1) Base64  (default)"
+echo "  2) Binary"
+read -rp "Choice [1-2]: " FMT_CHOICE
+[[ "$FMT_CHOICE" == "2" ]] && USE_BINARY=1 || USE_BINARY=0
+
+# --- output file ---
+echo ""
+read -rp "Signature output file [${TARGET_FILE}.sig]: " SIG_FILE
+[[ -z "$SIG_FILE" ]] && SIG_FILE="${TARGET_FILE}.sig"
+
+# --- compute hash locally for transparency ---
+echo ""
+FILE_HASH=$(openssl dgst "-${OPENSSL_ALG}" -hex "$TARGET_FILE" | awk '{print $NF}')
+echo "$HASH_ALG: $FILE_HASH"
+echo ""
+
+# --- sign ---
+SMCTL_CMD=(
+  smctl sign sign-hash
+  --file "$TARGET_FILE"
+  --hash-algorithm "$HASH_ALG"
+  --signature-algorithm "$SIG_ALG"
+  --signature-file "$SIG_FILE"
+  "$KEYPAIR_ID"
+)
+[[ "$USE_BINARY" == "1" ]] && SMCTL_CMD+=("--binary")
+
+echo "Running: ${SMCTL_CMD[*]}"
+"${SMCTL_CMD[@]}" || die "smctl sign sign-hash failed"
+echo "Signature written to: $SIG_FILE"
+
+# --- optional verification ---
+echo ""
+read -rp "Verify signature now? [Y/n] " VERIFY
+if [[ -z "$VERIFY" || "$VERIFY" =~ ^[yYjJ]$ ]]; then
+  # smctl verify-hash always expects binary input.
+  # If the signature was written as Base64, decode it to a temp file first.
+  if [[ "$USE_BINARY" == "0" ]]; then
+    VERIFY_SIG=$(mktemp)
+    trap 'rm -f "$VERIFY_SIG"' EXIT
+    echo "Note: smctl verify-hash requires binary input — decoding Base64 signature to temp file"
+    echo "Running: openssl enc -base64 -d -A -in $SIG_FILE -out $VERIFY_SIG"
+    openssl enc -base64 -d -A -in "$SIG_FILE" -out "$VERIFY_SIG" || die "failed to decode base64 signature"
+  else
+    VERIFY_SIG="$SIG_FILE"
+  fi
+
+  VERIFY_CMD=(
+    smctl sign verify-hash
+    --file "$TARGET_FILE"
+    --hash-algorithm "$HASH_ALG"
+    --signature-algorithm "$SIG_ALG"
+    --signature-file "$VERIFY_SIG"
+    "$KEYPAIR_ID"
+  )
+  echo "Running: ${VERIFY_CMD[*]}"
+  "${VERIFY_CMD[@]}" || die "verification failed"
+  echo "Signature verified."
+fi

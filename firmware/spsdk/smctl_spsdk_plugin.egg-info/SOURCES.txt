@@ -1,0 +1,8 @@
+pyproject.toml
+smctl_signature_provider.py
+smctl_spsdk_plugin.egg-info/PKG-INFO
+smctl_spsdk_plugin.egg-info/SOURCES.txt
+smctl_spsdk_plugin.egg-info/dependency_links.txt
+smctl_spsdk_plugin.egg-info/entry_points.txt
+smctl_spsdk_plugin.egg-info/requires.txt
+smctl_spsdk_plugin.egg-info/top_level.txt

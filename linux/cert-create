@@ -1,0 +1,16 @@
+#!/bin/bash
+
+smctl kp ls
+echo
+read -p "Key Pair ID: " KP_ID
+
+echo
+smctl certificate profile ls
+echo
+read -p "Certificate Profile ID: " CP_ID
+
+echo
+read -p "Certificate Alias: " ALIAS
+
+echo
+smctl kp generate-cert "$KP_ID" --cert-alias "$ALIAS" --cert-profile-id "$CP_ID"

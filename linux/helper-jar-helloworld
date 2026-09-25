@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$SCRIPT_DIR/src"
+JAR_FILE="$SRC_DIR/hello.jar"
+
+mkdir -p "$SRC_DIR" && cd "$SRC_DIR"
+rm -f Hello.java Hello.class "$JAR_FILE" && rm -rf META-INF
+
+cat > Hello.java <<'EOF'
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+    }
+}
+EOF
+
+javac Hello.java
+jar --create --file "$JAR_FILE" --main-class Hello Hello.class >/dev/null
+java -jar "$JAR_FILE"
+rm -f Hello.java Hello.class

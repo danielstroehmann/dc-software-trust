@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -n "${1:-}" ]; then
+    KP_ALIAS="$1"
+else
+    smctl kp ls
+    echo
+    read -p "Keypair Alias: " KP_ALIAS
+fi
+
+source "$(dirname "${BASH_SOURCE[0]}")/../../pki/select-chain"
+select_pki_chain
+
+### START: RAUC MAGIC
+WORKDIR="src"
+CONTENT="$WORKDIR/content"
+SEED="$WORKDIR/seed.raucb"
+SEED_RESIGN="$WORKDIR/seed_resign.raucb"
+printf "HELLO WORLD!\n" > "$CONTENT/rootfs.img"
+cat > "$CONTENT/manifest.raucm" <<'EOF'
+[update]
+compatible=test-device
+version=1.0
+
+[bundle]
+format=plain
+
+[image.rootfs]
+filename=rootfs.img
+EOF
+### END: RAUC MAGIC
+
+smctl certificate download --keypair-alias ${KP_ALIAS} -n src/${KP_ALIAS}.crt
+# REMOVE PREVIOUS BUNDLE
+[ -f $SEED ] && rm $SEED
+# SIGN FIRST TIME
+rauc bundle -c src/rauc.conf "$CONTENT" "$SEED" \
+  --cert src/${KP_ALIAS}.crt \
+  --key "pkcs11:object=${KP_ALIAS};type=private"
+## generate key ring (trust chain with ICA followed by ROOT)
+cat "$ICA_PEM" "$ROOT_PEM" > src/keyring.pem
+## CHECK FIRST SIGNATURE
+rauc info -c src/rauc.conf --keyring src/keyring.pem "$SEED"
+# REMOVE PREVIOUS RESIGN BUNDLE
+[ -f $SEED_RESIGN ] && rm $SEED_RESIGN
+## RESIGN
+# NOTE: you can omit the --no-verify in case old and new keyring are equal.
+#       if not than you either check how to specify two different keyrings (it is possible)
+#       or like me you verify with rauc info the old first and than ignore 
+#       during the second signing because you just validated before
+#       so in essence life is easier when splitting on two commands
+rauc resign -c src/rauc.conf "$SEED" "$SEED_RESIGN" \
+  --cert src/${KP_ALIAS}.crt \
+  --key "pkcs11:object=${KP_ALIAS};type=private" \
+  --keyring src/keyring.pem  \
+  --no-verify
+
+rauc info -c src/rauc.conf --keyring src/keyring.pem "$SEED_RESIGN"

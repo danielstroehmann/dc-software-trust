@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# Sign a file using ML-DSA hash signing via smctl (DigiCert Software Trust Manager).
+# Fully interactive: all options are selected via prompts.
+
+set -euo pipefail
+
+# --- colors (dark tones for white/light background terminals) ---
+R=$'\033[0m'
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+GRAY=$'\033[38;5;240m'
+BLUE=$'\033[38;5;20m'
+DGREEN=$'\033[38;5;28m'
+ORANGE=$'\033[38;5;130m'
+PURPLE=$'\033[38;5;54m'
+MAGENTA=$'\033[38;5;90m'
+CYAN=$'\033[38;5;24m'
+OLIVE=$'\033[38;5;136m'
+RED=$'\033[38;5;160m'
+BLACK=$'\033[38;5;232m'
+
+info()    { printf "${CYAN}  ▸ %s${R}\n" "$*"; }
+label()   { printf "${PURPLE}${BOLD}%-28s${R}${BLACK}%s${R}\n" "$1" "$2"; }
+section() { echo ""; printf "${BOLD}${OLIVE}┄┄┄ %s ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄${R}\n" "$*"; echo ""; }
+ok()      { printf "${DGREEN}${BOLD}  ✔  %s${R}\n" "$*"; }
+fail()    { printf "${RED}${BOLD}  ✘  %s${R}\n" "$*" >&2; }
+cmd_echo(){ printf "${DIM}${GRAY}  \$ %s${R}\n" "$*"; }
+
+die() { fail "$*"; exit 1; }
+
+command -v smctl   &>/dev/null || die "smctl not found"
+command -v openssl &>/dev/null || die "openssl not found"
+
+# --- select file to sign ---
+section "INPUT FILE"
+printf "${BLACK}  File to sign: ${R}"; read -r TARGET_FILE
+[[ -n "$TARGET_FILE" ]] || die "no file specified"
+[[ -f "$TARGET_FILE" ]]  || die "file not found: $TARGET_FILE"
+ok "File: $TARGET_FILE"
+
+# --- list keypairs ---
+section "AVAILABLE KEYPAIRS"
+smctl keypair list || die "smctl keypair list failed"
+echo ""
+printf "${BLACK}  Keypair ID: ${R}"; read -r KEYPAIR_ID
+[[ -n "$KEYPAIR_ID" ]] || die "no keypair ID provided"
+ok "Selected: $KEYPAIR_ID"
+
+# --- signature algorithm ---
+section "SIGNATURE ALGORITHM"
+printf "  ${DIM}${GRAY}1)${R} MLDSA44\n"
+printf "  ${ORANGE}${BOLD}2) MLDSA65  ${DIM}(default)${R}\n"
+printf "  ${DIM}${GRAY}3)${R} MLDSA87\n"
+echo ""
+printf "${BLACK}  Choice [1-3]: ${R}"; read -r SIG_CHOICE
+case "$SIG_CHOICE" in
+  1) SIG_ALG="MLDSA44" ;;
+  3) SIG_ALG="MLDSA87" ;;
+  *) SIG_ALG="MLDSA65" ;;
+esac
+ok "Signature algorithm: ${MAGENTA}${BOLD}$SIG_ALG${R}"
+
+# --- hash algorithm ---
+section "HASH ALGORITHM"
+printf "  ${DIM}${GRAY}1)${R} SHA-256\n"
+printf "  ${DIM}${GRAY}2)${R} SHA-384\n"
+printf "  ${ORANGE}${BOLD}3) SHA-512  ${DIM}(default)${R}\n"
+printf "  ${DIM}${GRAY}4)${R} SHA3-256\n"
+printf "  ${DIM}${GRAY}5)${R} SHA3-512\n"
+echo ""
+printf "${BLACK}  Choice [1-5]: ${R}"; read -r HASH_CHOICE
+case "$HASH_CHOICE" in
+  1) HASH_ALG="SHA-256";  OPENSSL_ALG="sha256"   ;;
+  2) HASH_ALG="SHA-384";  OPENSSL_ALG="sha384"   ;;
+  4) HASH_ALG="SHA3-256"; OPENSSL_ALG="sha3-256" ;;
+  5) HASH_ALG="SHA3-512"; OPENSSL_ALG="sha3-512" ;;
+  *) HASH_ALG="SHA-512";  OPENSSL_ALG="sha512"   ;;
+esac
+ok "Hash algorithm: ${MAGENTA}${BOLD}$HASH_ALG${R}"
+
+# --- output format ---
+section "OUTPUT FORMAT"
+printf "  ${ORANGE}${BOLD}1) Base64  ${DIM}(default)${R}\n"
+printf "  ${DIM}${GRAY}2)${R} Binary\n"
+echo ""
+printf "${BLACK}  Choice [1-2]: ${R}"; read -r FMT_CHOICE
+[[ "$FMT_CHOICE" == "2" ]] && USE_BINARY=1 || USE_BINARY=0
+[[ "$USE_BINARY" == "1" ]] && ok "Format: Binary" || ok "Format: Base64"
+
+# --- output file ---
+section "OUTPUT FILE"
+printf "${BLACK}  Signature output file [${TARGET_FILE}.sig]: ${R}"; read -r SIG_FILE
+[[ -z "$SIG_FILE" ]] && SIG_FILE="${TARGET_FILE}.sig"
+ok "Output: $SIG_FILE"
+
+# --- compute hash ---
+section "FILE HASH"
+FILE_HASH=$(openssl dgst "-${OPENSSL_ALG}" -hex "$TARGET_FILE" | awk '{print $NF}')
+label "  Algorithm:" " $HASH_ALG"
+label "  Digest:"    " $FILE_HASH"
+
+# --- sign ---
+section "SIGNING"
+SMCTL_CMD=(
+  smctl sign sign-hash
+  --file "$TARGET_FILE"
+  --hash-algorithm "$HASH_ALG"
+  --signature-algorithm "$SIG_ALG"
+  --signature-file "$SIG_FILE"
+  "$KEYPAIR_ID"
+)
+[[ "$USE_BINARY" == "1" ]] && SMCTL_CMD+=("--binary")
+
+cmd_echo "${SMCTL_CMD[*]}"
+echo ""
+"${SMCTL_CMD[@]}" || die "smctl sign sign-hash failed"
+ok "Signature written to: ${BOLD}$SIG_FILE${R}"
+
+# --- optional verification ---
+section "VERIFICATION"
+printf "${BLACK}  Verify signature now? [Y/n]: ${R}"; read -r VERIFY
+if [[ -z "$VERIFY" || "$VERIFY" =~ ^[yYjJ]$ ]]; then
+  if [[ "$USE_BINARY" == "0" ]]; then
+    # smctl verify-hash requires binary — decode Base64 sig to tempfile
+    VERIFY_SIG=$(mktemp)
+    trap 'rm -f "$VERIFY_SIG"' EXIT
+    openssl enc -base64 -d -A -in "$SIG_FILE" -out "$VERIFY_SIG" \
+      || die "failed to decode base64 signature"
+    info "Base64 → binary: $SIG_FILE → $VERIFY_SIG"
+  else
+    VERIFY_SIG="$SIG_FILE"
+  fi
+
+  VERIFY_CMD=(
+    smctl sign verify-hash
+    --file "$TARGET_FILE"
+    --hash-algorithm "$HASH_ALG"
+    --signature-algorithm "$SIG_ALG"
+    --signature-file "$VERIFY_SIG"
+    "$KEYPAIR_ID"
+  )
+  cmd_echo "${VERIFY_CMD[*]}"
+  echo ""
+  "${VERIFY_CMD[@]}" || die "verification failed"
+  echo ""
+  ok "${BOLD}${DGREEN}Signature verified successfully.${R}"
+fi
+echo ""
+
