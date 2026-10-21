@@ -11,7 +11,7 @@ This repo contains scripts and tooling for signing firmware using **DigiCert Sof
 | `firmware/rauc/` | Sign/resign RAUC OTA bundles via PKCS#11 + OpenSSL |
 | `firmware/silabs/` | Sign Silabs EFR32 `.s37` firmware via smctl + commander-cli |
 | `firmware/spsdk/` | SPSDK SignatureProvider plugin for DigiCert smctl |
-| `pki/` | Root CAs in `root/`, Intermediate CAs in `ica/`, selection helper `select-chain`. Only the `demo-*` dummy certificates are tracked; real certificates are git-ignored per file |
+| `pki/` | Root CAs in `root/`, Intermediate CAs in `ica/`, selection helper `select-chain`. Both directories are tracked empty (`.gitkeep`); certificates placed there are git-ignored |
 
 ## Prerequisites
 

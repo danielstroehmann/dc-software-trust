@@ -65,8 +65,13 @@ $RECYCLE.BIN/
 
 # Custom
 secrets.sh
+.env
 *.p12
 /src/
+windows/src/*
+linux/src/*
+mac/src/*
+!*/src/.gitkeep
 *.jar
 
 # Software Signing
@@ -76,15 +81,10 @@ firmware/silabs/src/tools/
 firmware/rauc/openssl-exsample/smpkcs11.so
 
 # Local PKI certificates (see pki/README.md)
-pki/ica/Solworx ECDSA Root E1 ICA I1_2026-03-26.pem
-pki/ica/Solworx MLDSA Root M1 ICA I1_2026-03-26.pem
-pki/ica/Solworx RSA Root R1 ICA I1_2026-03-26.pem
-pki/ica/Stroehmi ECDSA ICA_2026-03-26.pem
-pki/ica/Stroehmi ICA DC_2026-03-26.pem
-pki/root/Solworx ECDSA Root E1_2026-03-26.pem
-pki/root/Solworx MLDSA Root M1_2026-03-26.pem
-pki/root/Solworx RSA Root R1_2026-03-26.pem
-pki/root/Stroehmi-DC1-ROOT-CA_2026-03-26.pem
+pki/root/*
+pki/ica/*
+!pki/root/.gitkeep
+!pki/ica/.gitkeep
 
 # Generated RAUC artifacts
 firmware/rauc/src/*.crt

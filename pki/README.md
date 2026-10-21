@@ -2,22 +2,14 @@
 
 Location for the Root and Intermediate CA certificates behind your DigiCert Software Trust Manager keypairs, plus scripts that install them as trusted. Signature verification (Java, Windows, RAUC keyrings) requires these certificates.
 
-## Dummy certificates
+## Certificates
 
-**The `demo-*` certificates in this repository are unusable dummies.** They only show which files the scripts expect and where to put them. No keypair in DigiCert Software Trust Manager was issued by them, so signature and chain verification against them will fail. Their private keys were discarded after generation.
-
-For real use, download the Root CA and Intermediate CA (ICA) that issued your signing certificate from the **DigiCert ONE** platform and place them as PEM files next to the dummies:
+Download the Root CA and Intermediate CA (ICA) that issued your signing certificate from the **DigiCert ONE** platform and place them as PEM files here:
 
     root/   Root CA certificates (*.pem)
     ica/    Intermediate CA certificates (*.pem)
 
-Add your own files to `.gitignore` per file so they stay local.
-
-| Dummy | Algorithm |
-|---|---|
-| `root/demo-rsa-root.pem`, `ica/demo-rsa-ica.pem` | RSA 4096, SHA-384 |
-| `root/demo-ecdsa-root.pem`, `ica/demo-ecdsa-ica.pem` | ECDSA P-384, SHA-384 |
-| `root/demo-mldsa-root.pem`, `ica/demo-mldsa-ica.pem` | ML-DSA-65 |
+Both directories are empty in the repository (`.gitkeep`); everything else in them is git-ignored and stays local.
 
 ## Scripts
 
@@ -38,5 +30,3 @@ install-trust.bat                :: Windows, run as Administrator
 ```
 
 For Windows Java only, [windows/cert-import-root.bat](../windows/cert-import-root.bat) imports `root/` and `ica/` directly.
-
-The install scripts install every `*.pem` in `root/` and `ica/`, including the dummies. Remove the dummies first if you do not want them in your trust store.
