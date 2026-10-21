@@ -33,9 +33,9 @@ source ../pki/select-chain
 select_pki_chain || exit 1
 
 smctl certificate download \
-    --keypair-alias=$KEYPAIR_ALIAS \
+    --keypair-alias="$KEYPAIR_ALIAS" \
     --issuer-first --chain \
-    -n ${KEYPAIR_ALIAS}.crt >/dev/null 2>&1
+    -n "${KEYPAIR_ALIAS}.crt" >/dev/null 2>&1
 
 for pem in "$ROOT_PEM" "$ICA_PEM"; do
     alias=$(basename "$pem" .pem)
@@ -47,19 +47,19 @@ done
 
 JCE_DIR="$HOME/.digicert-ucpc/applications/smjce/1.0"
 
+# -sigalg omitted: jarsigner derives it from the key (RSA or ECDSA)
 jarsigner -verbose \
     -J-Djava.class.path="$JCE_DIR/digicert-jce-1.0.jar:$JCE_DIR/bcprov-jdk18on-1.77.jar" \
     -keystore NONE \
     -storetype DIGICERT \
     -storepass changeit \
     -providerClass com.digicert.jce.Provider \
-    -certchain ${KEYPAIR_ALIAS}.crt \
-    -sigalg SHA256withRSA \
+    -certchain "${KEYPAIR_ALIAS}.crt" \
     -tsa http://timestamp.digicert.com \
-    -signedjar ./src/SIGNED_$SRC_JAR \
-    ./src/$SRC_JAR \
-    $KEYPAIR_ALIAS
+    -signedjar "./src/SIGNED_$SRC_JAR" \
+    "./src/$SRC_JAR" \
+    "$KEYPAIR_ALIAS"
 
-cd src ; unzip SIGNED_hello.jar ; cat META-INF/*.SF ; find . -not -name "*.jar" -not -path "." -delete ; cd ..
+unzip -p "./src/SIGNED_$SRC_JAR" 'META-INF/*.SF'
 
-rm *.crt
+rm -f "${KEYPAIR_ALIAS}.crt"

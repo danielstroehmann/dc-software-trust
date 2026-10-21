@@ -7,13 +7,14 @@ smctl kp ls ; echo ; read -p "Keypair Alias: " KP_ALIAS
 SRC_JAR="hello.jar"
 SIGNING_DIR="${SIGNING_DIR:-$HOME/signing}"
 ###################################################################################################################
-smctl certificate download --keypair-alias=$KP_ALIAS --issuer-first --chain -n ${KP_ALIAS}.crt # >/dev/null 2>&1
+smctl certificate download --keypair-alias="$KP_ALIAS" --issuer-first --chain -n "${KP_ALIAS}.crt" # >/dev/null 2>&1
 
+# -sigalg omitted: jarsigner derives it from the key (RSA or ECDSA)
 jarsigner -verbose -keystore NONE -storetype DIGICERT -storepass changeit \
     -J-Djava.class.path="$SIGNING_DIR/digicert-jce-1.0.jar:$SIGNING_DIR/bcprov-jdk18on-1.77.jar" \
-    -providerClass com.digicert.jce.Provider -certchain ${KP_ALIAS}.crt -sigalg SHA256withRSA \
-    -tsa http://timestamp.digicert.com -signedjar src/SIGNED_$SRC_JAR src/$SRC_JAR $KP_ALIAS
+    -providerClass com.digicert.jce.Provider -certchain "${KP_ALIAS}.crt" \
+    -tsa http://timestamp.digicert.com -signedjar "src/SIGNED_$SRC_JAR" "src/$SRC_JAR" "$KP_ALIAS"
 
 ###################################################################################################################
-cd src ; unzip SIGNED_hello.jar ; cat META-INF/*.SF ; find . -not -name "*.jar" -not -path "." -delete ; cd ..
-rm *.crt
+unzip -p "src/SIGNED_$SRC_JAR" 'META-INF/*.SF'
+rm -f "${KP_ALIAS}.crt"

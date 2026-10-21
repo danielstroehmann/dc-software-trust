@@ -1,0 +1,20 @@
+#!/bin/bash
+cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
+if [ -n "${1:-}" ]; then
+    KP_ALIAS="$1"
+else
+    smctl kp ls ; echo ; read -p "Keypair Alias: " KP_ALIAS
+fi
+PROVIDER=(-provider digicert_stm -provider default)
+CHAIN="./src/${KP_ALIAS}-chain.pem"
+##################################################################
+mkdir -p ./src
+echo 'Hello from DigiCert' > ./src/hello.txt
+smctl certificate download --keypair-alias "$KP_ALIAS" --chain -n "${KP_ALIAS}-chain.pem" -o ./src >/dev/null
+##################################################################
+openssl cms -sign "${PROVIDER[@]}" -md sha256 -inkey "stm://${KP_ALIAS}" -signer "$CHAIN" -certfile "$CHAIN" \
+    -in ./src/hello.txt -out ./src/hello.signed.txt
+openssl cms -verify -purpose codesign -CApath /etc/ssl/certs -in ./src/hello.signed.txt -out /dev/null
+##################################################################
+cat ./src/hello.signed.txt
+rm -f "$CHAIN"
