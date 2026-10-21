@@ -19,8 +19,6 @@ Run the scripts from this directory. Each lists the keypairs (`smctl kp ls`) and
 | `helper-jar-helloworld` | Build and run `src/hello.jar` (Hello World), used by the JAR scripts |
 | `helper-sbom-create` | Write a minimal CycloneDX `src/sbom.json`, used by `sign-sbom` |
 
-`src/signed_sbom.json` is a sample output of `sign-sbom`.
-
 ## Prerequisites
 
 - `smctl` installed and authenticated (`smctl healthcheck`)
