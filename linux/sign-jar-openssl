@@ -1,9 +1,7 @@
 #!/bin/bash
-
 ## HELPER: Show Keypairs and generate a small JAVA archive
 smctl kp ls ; echo ; read -p "Keypair Alias: " KP_ALIAS
 ./helper-jar-helloworld
-
 # SIGN
 openssl dgst -sha256 -provider digicert_stm -provider default -sign "stm://${KP_ALIAS}" -out ./src/hello.signature.bin ./src/hello.jar
 # EXPORT PUBLIC KEY
